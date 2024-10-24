@@ -2,8 +2,8 @@
 
 # %% auto 0
 __all__ = ['empty', 'models', 'text_only_models', 'models_azure', 'find_block', 'contents', 'usage', 'wrap_latex', 'Client',
-           'get_stream', 'mk_openai_func', 'mk_tool_choice', 'call_func_openai', 'mk_toolres', 'mock_tooluse', 'Chat',
-           'mk_msg', 'mk_msgs']
+           'get_stream', 'mk_openai_func', 'mk_tool_choice', 'call_func_openai', 'mk_toolres', 'mock_tooluse',
+           'get_toolcall', 'Chat', 'mk_msg', 'mk_msgs']
 
 # %% ../00_core.ipynb 3
 from fastcore import imghdr
@@ -200,6 +200,11 @@ def structured(self:Client,
     tools = [mk_openai_func(o) for o in tools]
     if obj is not None: ns = mk_ns(obj)
     res = self(msgs, tools=tools, tool_choice='required', **kwargs)
+    return get_toolcall(res, ns)
+
+
+async def get_toolcall(res: Optional[ChatCompletion], ns: Optional[abc.Mapping]=None):
+    res = res if isinstance(res, ChatCompletion) else (await res)
     cts = getattr(res, 'choices', [])
     tcs = [call_func_openai(t.function, ns=ns) for o in cts for t in (o.message.tool_calls or [])]
     return tcs
